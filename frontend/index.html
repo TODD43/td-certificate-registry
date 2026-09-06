@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TD Credential Verify</title>
+<style>
+body{font-family:Inter,system-ui,sans-serif;background:#071426;color:#fff;margin:0}.wrap{max-width:900px;margin:60px auto;padding:24px}.card{background:#0b1d33;border:1px solid #264764;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.2);margin:15px 0}button{padding:12px 18px;border:0;border-radius:10px;background:#2ea8ff;color:#04111d;font-weight:700;cursor:pointer}input{width:min(100%,700px);padding:12px;border:1px solid #355878;background:#06101c;color:#fff;border-radius:10px;margin:6px 0}.ok{font-weight:700;color:#62e6a7}.muted{color:#9ab0c3;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>TD Credential Verify</h1>
+<p class="muted">Verify a document hash against a blockchain credential registry.</p>
+<div class="card">
+<label>Registry contract</label>
+<input id="contract" placeholder="0x...">
+<label>Credential ID (bytes32)</label>
+<input id="id" placeholder="0x...">
+<label>Document hash (bytes32)</label>
+<input id="hash" placeholder="0x...">
+<br><br>
+<button onclick="verifyCredential()">Verify Credential</button>
+<p id="result"></p>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+<script>
+const abi=['function verify(bytes32,bytes32) view returns(bool,address,uint64)'];
+async function verifyCredential(){
+ try{
+  if(!window.ethereum)throw new Error('Install MetaMask or another EVM wallet/provider.');
+  const provider=new ethers.BrowserProvider(window.ethereum);
+  const address=document.getElementById('contract').value.trim();
+  if(!ethers.isAddress(address))throw new Error('Enter a valid registry contract address.');
+  const c=new ethers.Contract(address,abi,provider);
+  const r=await c.verify(document.getElementById('id').value.trim(),document.getElementById('hash').value.trim());
+  document.getElementById('result').innerHTML=(r[0]?'<span class="ok">✓ Valid credential</span>':'<span>✗ Invalid or revoked credential</span>')+'<br>Issuer: '+r[1]+'<br>Issued: '+(r[2]?new Date(Number(r[2])*1000).toLocaleString():'-');
+ }catch(e){document.getElementById('result').textContent=e.shortMessage||e.message}
+}
+</script>
+</body>
+</html>
